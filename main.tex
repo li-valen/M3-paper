@@ -1,0 +1,623 @@
+\documentclass[12pt]{article}
+\usepackage[margin=1in]{geometry}
+\title{\bfseries Title Here}
+\usepackage{fancyhdr}
+\usepackage{indentfirst}
+\usepackage{amsmath}
+\usepackage[nottoc,numbib]{tocbibind}
+\usepackage{float}
+\restylefloat{table}
+\usepackage{hyperref} 
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{longtable} 
+\graphicspath{pictures}
+            %IMAGE FORMAT:\includegraphics[scale=.5]{pictures/name.png}\\
+\begin{document}
+%\setcounter{tocdepth}{4}
+\setcounter{secnumdepth}{4}
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{Team 18095}
+\rhead{Page \thepage { }of 32}
+\rfoot{}
+\begin{center}{\Large{\bfseries{Hot Button Issue:\\ Staying Cool as the World Heats Up}}}\end{center}
+\subsection*{Executive Summary}
+Dear Memphis City Officials,
+\par In recent years, the impact of extreme heat events has become a growing concern for cities across the country. As global temperatures rise, heat waves are becoming more frequent and prolonged, placing increasing strain on electrical grids and leading to widespread power outages. These outages can have devastating consequences, particularly for vulnerable populations who face heightened risks of heat-related illnesses and fatalities. Without access to cooling and essential services, these communities are disproportionately affected, making it critical to understand and combat the factors that contribute to heat vulnerability. By identifying the neighborhoods most at risk, we hope to offer a way for Memphis to take proactive measures to allocate resources efficiently, expand access to cooling solutions, and protect the well-being of its residents.
+\par We first started by demonstrating the dangerously high, yet prolonged temperatures unconditioned dwellings reach during heat waves. Using a season of high-temperature data, our group developed a multi-linear regression model that predicts the indoor temperature, accounting for various factors including shade, humidity, and time of day. Using the July 8, 2022 heat wave, we showed that unconditioned dwellings in Memphis could reach temperatures of greater than 90 degrees Fahrenheit for several continuous hours. Research has shown an association between high indoor temperatures and adverse effects.\cite{https://www.ncbi.nlm.nih.gov/books/NBK535285/} Therefore, our group has shown that heat waves pose serious health risks to many in Memphis.
+\par Our second section consists of a semi-parametric model aiming to forecast Memphis' summer peak power demand from 2020 to 2040, extending a historical trend analysis from 2000 onward. Utilizing a SARIMAX model with exogenous variables, we project a continued rise in peak demand, driven primarily by demographic and economic factors. The accompanying graphs produced illustrate this projected increase, with a widening confidence interval highlighting the inherent uncertainty in long-term forecasting; the model also had a 2.43\% MAPE for sensitivity data, indicating accuracy in fitting historical patterns. As such, Memphis city officials should anticipate steadily increasing energy demands over the next two decades and begin proactively planning for capacity expansions and energy efficiency initiatives.
+
+\par The third section of this report focuses on developing a vulnerability score for neighborhoods in Memphis, Tennessee, to assess their susceptibility to extreme heat events during power outages. By analyzing key socioeconomic, demographic, and infrastructural factors—including income levels, age distribution, vehicle ownership, housing types, and green space availability—we identified which areas are most at risk: 38103, 38104, 38105, 38106, 38141. The vulnerability score was derived from a weighted model that quantifies the impact of these variables, allowing city officials to prioritize cooling interventions effectively. Our findings indicate that low-income neighborhoods, areas with high elderly or child populations, and regions with limited transportation access or green space face the greatest risks. To mitigate these dangers, we propose the deployment of mobile cooling pods in high-risk locations, ensuring accessible relief for vulnerable residents.
+
+\newpage
+\tableofcontents
+
+{ }
+%If contents is too long-- remove Exec. Summary as a numbered section and remove ``Evaluating the Model Subsection'' and thus make sub-subsections just subsections. Absolute worst case, call one section End matter and subsection Reflections and Code Appendix.
+\newpage
+
+%---------------------------------GLOBAL SECTIONS------------------------
+
+%---------------------------------PART ONE------------------------
+\section{Part 1: Hot To Go}
+
+\subsection{Restatement of the Problem}
+In this problem, we are tasked with predicting the indoor temperature, hour by hour, of a non-air-conditioned dwelling during a heat wave over a single day in either Memphis or Birmingham. Our group chose to develop a model for Memphis. This model must then be tested against a set of sample dwellings and heat wave data for our chosen city.
+
+\subsection{Assumptions and Justifications}
+
+\subsubsection{The only source of heat entering the building is from the external environment.}
+Justification: Since the dwelling lacks air conditioning, the indoor temperature will be primarily influenced by outdoor temperature fluctuations, radiation, and conduction through walls and roofs.\cite{https://pmc.ncbi.nlm.nih.gov/articles/PMC4352572/}
+
+\subsubsection{Heat accumulation follows a predictable pattern based on energy balance equations.}
+Justification: The model assumes that heat gained from the environment and lost through ventilation and radiation can be represented mathematically. \cite{https://pmc.ncbi.nlm.nih.gov/articles/PMC4352572/}\cite{https://pmc.ncbi.nlm.nih.gov/articles/PMC4121079/}\cite{https://www.engineeringtoolbox.com/heat-transfer-d_430.html}
+
+\subsubsection{Same temperature throughout the house.}
+Justification: Research using different sensors throughout a house has shown only minor temperature differences, allowing us to reasonably assume uniform temperature distribution.\cite{https://pmc.ncbi.nlm.nih.gov/articles/PMC4456148/}
+
+\subsubsection{Insulation renovations are up to date.}
+Justification: Insulation should be renovated every 15-20 years to maintain effectiveness. In 2003, fiberglass insulation was most likely used, which has a 15-year lifespan on average, with a possible 20-30 year span. From the 1970s to the 1990s, cellulose insulation was used, lasting 20-30 years under the right circumstances. In the 1950s, rock wool was common, which can last 30-100 years with correct installation. Since it has been 72 years since the construction of a 1953 house, we assume that the insulation of every sample dwelling is modern and up-to-date, and therefore constant between all sample dwellings. \cite{https://sealed.com/resources/how-long-does-insulation-last/}
+
+
+\subsection{The Model}
+\subsubsection{Parameters}\label{params}
+%%example table
+\begin{table}[H]
+\centering
+\begin{tabular}{|p{3cm}|p{7cm}|p{2cm}|p{2cm}|}
+\hline
+\bf Symbol & \bf Definition & \bf Units \\\hline
+$T_{indoor}$ & Temperature indoors  & Fahrenheit \\\hline
+$T_{outdoor}$ & Temperature outdoors & Fahrenheit   \\\hline
+$t$ & Time & Hours \\\hline
+$U$ & UV index & MilliWatts per square meter \\\hline
+$S$ & Shade (0-1) & ... \\\hline
+$H$ & Humidity & \% \\\hline
+\end{tabular}
+\caption{Parameters for Housing Model}
+\end{table}
+
+
+\subsubsection{Developing the Model}
+\par To determine the indoor temperature of any given dwelling we must consider these 4 variables: time of  day, previous indoor temperature (one hour prior), current outdoor temperature, and humidity. Previous indoor temperature is relevant as it offers a starting point for the model to make its prediction. Especially with the insulation present in almost all modern buildings, the indoor temperature changes even more gradually, making it even more effective at predicting the indoor temperature.\cite{https://www.lbl.gov}\cite{https://www.energy.gov}
+\par Outdoor temperature is important as it directly affects the indoors. As the outside temperature rises or drops, heat will naturally flow to and from the dwelling.\cite{https://www.engineeringtoolbox.com/conduction-heat-transfer-d_430.html}
+Humidity is crucial as higher humidity leads to slower heat transfer. The humidity is used to help set a heat transfer multiplier, which is then multiplied with the difference between the outdoor temperature and indoor temperature. This product is then passed onto the model along with the raw indoor temperature.\cite{https://www.sciencedirect.com/science/article/pii/S0378778819312169}
+\par Using a random sample of the UV index from Memphis, our group obtained a corresponding UV index for each hour of the day. This UV index is multiplied with a shade value and passed onto the model to emulate the heat that direct sunlight may disperse into a dwelling. \cite{https://www.uvindextoday.com/usa/tennessee/shelby-county/memphis-uv-index}\cite{https://www.epa.gov/sunsafety/uv-index}
+\par Our model is a simple multi-linear regression trained and fitted on data obtained from Central Europe. However, this data set is composed of measurements taken throughout an entire year. Our model’s focus on indoor temperature during heat waves led our group to train using only the data collected during the summer which showed an outdoor temperature of greater than 80 degrees Fahrenheit.\cite{https://www.mdpi.com/2071-1050/11/15/4092}
+
+\subsection{Results}
+
+\begin{figure}
+    \centering
+    \includegraphics[scale=0.6]{q1.png}
+    \label{fig:q1Model}
+    \caption{Predicted Indoor Temperature} 
+\end{figure}
+\par As our training data did not include 2022, we were able to use it to test our model's sensitivity. Plugging in the given and predicted values in the percent error formula yielded sensitivity.
+\subsection{Evaluating the Model}
+\subsubsection{Validation}
+
+\par We conducted a sensitivity analysis to assess the impact of outside temperature, humidity, shade, and the hour of the day on the predicted internal temperature. By varying one variable at a time and keeping others fixed, we can find out which have the most profound impact on the predictions of the model. This way, we understand how the model behaves and identify potential weaknesses, as well as the agreement of predictions with expectations in reality. Moreover, sensitivity analysis indicates how small changes in the state of the environment affect indoor climate control and help make better decisions regarding temperature regulating strategies. 
+\begin{figure}
+    \centering
+    \includegraphics[scale=0.6]{hour.png}
+    \caption{Sensitivity Analysis (hour): 0.18\% } 
+    \label{fig:sensitivityHour}
+\end{figure}
+\begin{figure}
+    \centering
+    \includegraphics[scale=0.55]{humidity.png}
+    \caption{Sensitivity Analysis (humidity): 0.41\%}  
+    \label{fig:sensitivityHumidity}
+\end{figure}
+\begin{figure}
+    \centering
+    \includegraphics[scale=0.55]{outsideTemp.png}
+    \caption{Sensitivity Analysis (outsideTemp): 5.09\% } 
+    \label{fig:sensitivityOutside}
+\end{figure}
+\begin{figure}
+    \centering
+    \includegraphics[scale=0.6]{shade_level.png}
+    \caption{Sensitivity Analysis (shade): 0.19\% } 
+    \label{fig:sensitivityShade}
+\end{figure}
+\begin{figure}
+    \centering
+    \includegraphics[scale=0.55]{indoorTemp.png}
+    \caption{Sensitivity Analysis (insideTemp): 0.31\% } 
+    \label{fig:sensitivityIndoor}
+\end{figure}
+\begin{figure}
+    \centering
+    \includegraphics[scale=0.55]{previousinsideTemp.png}
+    \caption{Sensitivity Analysis (previousInsideTemp): Cool start- 8.86\%, Warm start- 3.24\%}  
+    \label{fig:sensitivityInside}
+\end{figure}
+
+
+\subsubsection{Strengths and Weaknesses}
+\par Our model is particularly strong at predicting the temperature during the beginning of heat waves. This is because much of the data the model is fit to is below 90 degrees Fahrenheit, so it would be better at predicting temperatures below 90 degrees Fahrenheit.
+\par The model cannot account for long-term factors like climate change. Despite climate change having a noticeable effect on temperatures around the Earth even across years, the single season-long span of data our model used leads to an ignorance of the effects of climate change.\cite{https://www.journals.sagepub.com/doi/pdf/10.1177/0143624419847621} 
+\par Also, the data our model is fit too did not provide any shade property, quantitative or qualitative. However, it did indicate the room that each sensor was in, allowing our group to infer different amounts of shade through the average number of windows each room may have. This, however, is not a perfect parallel to the shade implied by the question.
+
+\pagebreak
+%---------------------------------PART TWO------------------------
+\section{Part 2: Power Hungry}
+
+\subsection{Restatement of the Problem}
+\par In this problem, we utilized a semiparametric approach to estimate the relationships between electricity demand, temperatures, calendar effects, demographic, and economic variables to predict the most intensive values Memphis’ power grid should be prepared to handle during the summer months.
+\par As populations change, power demands are proportionately impacted; being able to forecast long-term changes to electricity and power demands is critical for effective policy planning. A semi-parametric approach was utilized to estimate the relationships between electricity demand, temperatures, calendar effects, demographic, and economic variables to predict the most intensive values Memphis' power grid should be prepared to handle during the summer months. 
+
+\subsection{Assumptions and Justifications}
+
+\subsubsection{Linearity in Exogenous Variable Forecasts}
+We assume that future values of population and the price of electricity can be reasonably approximated by a linear trend \cite{Cohen2010}. 
+Justification: This simplifies the extrapolation of these drivers, acknowledging that more sophisticated models may be required for higher forecast accuracy.
+
+\subsubsection{Constant Relationship between Exogenous Variables and Peak Demand}
+The SARIMAX model assumes that the relationships observed between historical economic indicators and peak demand will continue into the future \cite{HyndmanFan}.
+Justification: This assumes that the trends used to formulate the underlying model remain constant over time, a necessary condition for our estimate.
+
+\subsubsection{SARIMAX Model Appropriateness}
+We assume that a SARIMAX $(1,1,1)(0,0,0,0)$ model is appropriate for capturing the underlying time series dynamics of peak demand \cite{Box1976}.
+Justification: Given the limited historical data and the goal of capturing basic trends, this model balances simplicity with the ability to model autocorrelation and incorporate exogenous factors.
+
+\subsection{Model}
+
+\subsubsection{Parameters}
+As discussed in several studies such as “Density Forecasting for Long-Term Peak Electricity Demand” by Hyndman and Fan \cite{HyndmanFan}, effective operation and planning require consideration of several factors ranging from economic, electrical, to temperature.
+
+Our approach is based first on historical data, economic indicators, and then time series modeling techniques to construct long-term probability distributions. This is akin to most risk analyses for infrastructure investments. The methodology can be depicted as follows:
+
+\begin{itemize}
+  \item \textbf{Data Collection \& Preparation:} Key variables — including historical electricity demand, economic indicators like population and electricity rates, and temperature data — are extracted, cleaned to handle missing or erroneous entries, and transformed into a usable format for modeling.
+  \item \textbf{Relationship Assessment:} This stage explores the relationships between the demand drivers, such as population and electricity rates. By understanding the correlation, we are better suited to perform the model selection process.
+\end{itemize}
+
+We produced this heatmap that indicates factors with high correlation using Python’s seaborn library. The correlation matrix reveals strong positive relationships between peak demand with respect to time in years, as well as between electricity rates and peak demand.
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[scale=.5]{heatmap.png} 
+  \caption{Correlation Matrix for Key Variables}
+  \label{fig:correlation_matrix}
+\end{figure}
+
+\subsubsubsection{Exogenous Projection}
+Future economic indicators (e.g., population growth and price of electricity) are projected via linear trend and extrapolation, assuring variable relationships can be reasonably approximated to a linear projection of the underlying trend.
+\[
+Y = \alpha + \beta X + \epsilon
+\]
+Where:
+\begin{itemize}
+    \item $Y$ represents the dependent variable (e.g., population increase),
+    \item $X$ represents the independent variable (Year),
+    \item $\alpha$ represents the intercept,
+    \item $\beta$ represents the slope,
+    \item $\epsilon$ represents the error term.
+\end{itemize}
+
+\subsubsubsection{SARIMAX Core}
+Peak demand was determined to be best captured using a SARIMAX time series model (Seasonal AutoRegressive Integrated Moving Average with eXogenous regressors). The model is represented by:
+\[
+y_t = c + \phi_1 y_{t-1} + \dots + \phi_p y_{t-p} + \theta_1 \epsilon_{t-1} + \dots + \theta_q \epsilon_{t-q} + \beta X_t + \epsilon_t
+\]
+Where:
+\begin{itemize}
+    \item $y_t$ represents peak power demand,
+    \item $p$ represents parameters of autoregressive component,
+    \item $q$ represents parameters of moving average component,
+    \item $\phi_1$ represents the autoregressive component,
+    \item $\theta_1$ represents moving average parameters,
+    \item $X_t$ represents exogenous variables,
+    \item $\beta$ represents the coefficient for the exogenous variables,
+    \item $\epsilon_t$ represents white noise.
+\end{itemize}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[scale=.5]{Peak Demand Model.png}
+  \caption{Block diagram of the proposed methodology}
+  \label{fig:methodology}
+\end{figure}
+
+\subsubsection{Developing the Model}
+We identified that long-term electricity demand growth is largely dependent on demographic, economic, and temperature-related variables \cite{Wang2019}. After engaging in an extensive source of available regional and state data, we determined that the following listed demographics and economic observations provide a holistic picture of most factors that influence peak power demand.
+
+\begin{table}[ht]
+\centering
+\resizebox{\textwidth}{!}{ % This will resize the table to fit the width of the page
+\begin{tabular}{|c|c|c|c|c|c|c|c|}
+\hline
+\textbf{Year} & \textbf{Est Residential Population} & \textbf{Persons per Household} & \textbf{# of Households} & \textbf{US-City Average CPI} & \textbf{Per Cap Personal Income} & \textbf{GSP Chain Volume Est} & \textbf{Average Elect. Price} \\
+\hline
+2001 & 685,198 & 2.52 & 250,764 & 177.1 & 31,070 & 47,702.71 & \$0.08 \\
+2002 & 683,492 & 2.51 & 250,807 & 179.9 & 31,568 & 49,215.42 & \$0.08 \\
+2003 & 682,206 & 2.51 & 250,850 & 184.0 & 32,347 & 50,907.03 & \$0.08 \\
+2004 & 680,631 & 2.50 & 250,893 & 188.9 & 33,459 & 53,485.47 & \$0.08 \\
+2005 & 679,437 & 2.50 & 250,936 & 195.3 & 34,284 & 56,052.84 & \$0.08 \\
+2006 & 680,702 & 2.49 & 250,979 & 201.6 & 35,899 & 58,880.41 & \$0.08 \\
+2007 & 678,052 & 2.49 & 251,022 & 207.3 & 37,091 & 59,676.44 & \$0.09 \\
+2008 & 675,278 & 2.48 & 251,065 & 215.3 & 37,277 & 60,049.52 & \$0.09 \\
+2009 & 675,183 & 2.48 & 251,108 & 214.5 & 35,931 & 58,813.98 & \$0.09 \\
+2010 & 652,349 & 2.47 & 251,151 & 218.1 & 37,012 & 59,620.61 & \$0.09 \\
+2011 & 655,434 & 2.47 & 251,194 & 224.9 & 38,692 & 61,181.62 & \$0.09 \\
+2012 & 658,961 & 2.46 & 251,237 & 229.6 & 40,194 & 64,569.54 & \$0.09 \\
+2013 & 657,386 & 2.46 & 251,280 & 232.9 & 40,062 & 66,932.31 & \$0.09 \\
+2014 & 655,299 & 2.46 & 251,323 & 236.7 & 40,888 & 68,027.97 & \$0.10 \\
+2015 & 654,469 & 2.46 & 251,366 & 237.0 & 42,206 & 71,119.88 & \$0.10 \\
+2016 & 653,026 & 2.45 & 251,409 & 240.0 & 43,143 & 72,974.14 & \$0.10 \\
+2017 & 651,398 & 2.45 & 251,452 & 245.1 & 44,557 & 75,341.74 & \$0.10 \\
+2018 & 651,700 & 2.45 & 251,495 & 251.1 & 46,218 & 77,803.07 & \$0.10 \\
+2019 & 650,998 & 2.45 & 251,538 & 255.7 & 48,269 & 80,380.97 & \$0.10 \\
+2020 & 635,225 & 2.45 & 251,586 & 258.8 & 51,329 & 81,011.50 & \$0.11 \\
+\hline
+\end{tabular}
+}
+\caption{Economic Summary Statistics for Memphis, 2001-2020}
+\label{fig:economic_summary}
+\end{table}
+
+\begin{table}[ht]
+\centering
+\resizebox{0.5\textwidth}{!}{ % Reduced scale to 80% of the text width
+\begin{tabular}{|c|c|c|c|}
+\hline
+\textbf{Year} & \textbf{Date (month-day)} & \textbf{Temperature (°F)} & \textbf{Temperature (°C)} \\
+\hline
+2000 & 8-30 & 107 & 41.7 \\
+2001 & 8-22 & 96  & 35.6 \\
+2002 & 7-10 & 98  & 36.7 \\
+2003 & 8-18 & 98  & 36.7 \\
+2004 & 7-14 & 97  & 36.1 \\
+2005 & 8-21 & 100 & 37.8 \\
+2006 & 8-10 & 102 & 38.9 \\
+2007 & 8-15 & 106 & 41.1 \\
+2008 & 7-29 & 101 & 38.3 \\
+2009 & 6-23 & 100 & 37.8 \\
+2010 & 8-4  & 104 & 40.0 \\
+2011 & 8-3  & 106 & 41.1 \\
+2012 & 7-5  & 103 & 39.4 \\
+2013 & 9-8  & 98  & 36.7 \\
+2014 & 8-24 & 100 & 37.8 \\
+2015 & 7-29 & 99  & 37.2 \\
+2016 & 7-22 & 100 & 37.8 \\
+2017 & 7-21 & 99  & 37.2 \\
+2018 & 7-13 & 97  & 36.1 \\
+2019 & 9-16 & 100 & 37.8 \\
+2020 & 8-11 & 97  & 36.1 \\
+\hline
+\end{tabular}
+} 
+\caption{Peak Temperature Statistics in Memphis, 2000-2020}
+\end{table}
+
+\begin{table}[ht]
+\centering
+\resizebox{0.3\textwidth}{!}{ % Scaling the table to fit
+\begin{tabular}{|c|c|}
+\hline
+\textbf{Year} & \textbf{Consumption (kWh)} \\
+\hline
+2012 & 10,753,992,000 \\
+2013 & 10,705,452,000 \\
+2014 & 10,544,122,000 \\
+2015 & 10,514,853,000 \\
+2016 & 10,436,626,000 \\
+2017 & 10,154,668,000 \\
+2018 & 10,604,732,000 \\
+2019 & 10,208,674,000 \\
+2020 & 9,672,364,000 \\
+2021 & 9,800,375,000 \\
+2022 & 9,768,296,000 \\
+\hline
+\end{tabular}
+}
+\caption{Electricity Demand in Memphis, 2012-2022}
+\label{fig:electricity_demand}
+\end{table}\\
+
+
+\subsubsection{Model Execution}
+The code begins by selecting relevant columns from the existing dataframe 'df'. It focuses on Year, Population, Rate, and Peak Demand. The Year column is converted to integer type, and the data is sorted chronologically to ensure proper time series analysis.
+
+
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[scale=.5]{Historical data memphis.png} 
+  \caption{Historic Peak Demand Relative to Population and Time in Years}
+  \label{fig:correlation_matrix}
+\end{figure}
+
+
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[scale=.5]{Memphis Prediction 20 Years.png} 
+  \caption{Predicted Data for Memphis Summer Peak Power Demand, units (10 GW)}
+  \label{fig:correlation_matrix}
+\end{figure}
+
+\begin{table}[ht]
+\centering
+\begin{tabular}{|c|c|}
+\hline
+\textbf{Year} & \textbf{Peak Power Demand (10 GW)} \\
+\hline
+2025 & 286.63 \\
+2030 & 304.75 \\
+2035 & 318.88 \\
+2040 & 332.84 \\
+\hline
+\end{tabular}
+\caption{Estimated Peak Power Demand, units (10 GW)}
+\label{tab:peak_power_demand}
+\end{table}
+
+
+\subsection{Sensitivity Analysis}
+Sensitivity analysis evaluates how changes in model parameters or inputs affect the model's predictions. The analysis compares the historical actual peak demand values (in GW) to the predicted values generated by the linear regression model for each year from 2000 to 2020.
+
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[scale=.5]{Sensistivity Analysis .png}
+  \caption{Sensitivity Analysis, Mean Absolute Percentage Error (MAPE)}
+  \label{fig:methodology}
+\end{figure}
+
+MAPE is a metric used to measure the accuracy of a forecasting model. It calculates the average percentage error between actual and predicted values, expressed as a percentage. A lower MAPE indicates a more accurate model \cite{Hyndman2008}. Our observed value of 2.43\% indicates that our model predictions closely align with the actual values, demonstrating accuracy.
+
+\[
+\text{MAPE} = \frac{1}{n} \sum_{t=1}^{n} \left| \frac{\text{Actual}_t - \text{Forecast}_t}{\text{Actual}_t} \right| \times 100
+\]
+
+Where:
+\begin{itemize}
+    \item $n$: Total number of data points,
+    \item $\text{Actual}_t$: Actual value at time $t$,
+    \item $\text{Forecast}_t$: Predicted value at time $t$.
+\end{itemize}\\
+
+\subsection{Strengths \& Weaknesses}
+
+One notable strength of our model is its use of a SARIMAX time series approach, enabling it to capture the underlying dynamics of peak demand while incorporating exogenous variables like economic indicators and temperature data. The model's inclusion of a confidence interval is also beneficial, providing a range of potential outcomes that allow for more flexible planning.
+
+However, a potential area for refinement lies in the model's reliance on linear extrapolations for future economic indicators, which may not fully capture the complexities of real-world economic shifts. While the SARIMAX model offers a balanced approach given the data available, exploring more sophisticated time series models could further improve forecasting accuracy with more historical data and time.
+
+In conclusion, the forecast suggests a need for proactive planning and investment in Memphis' power infrastructure to meet the anticipated increase in peak demand. Recognizing the growing uncertainty in longer-term predictions, it becomes increasingly important to continually monitor and refine the model with updated data to ensure that the city's power grid can reliably meet the needs of its residents and businesses in the coming decades.
+
+
+
+%---------------------------------PART THREE------------------------
+\section{Part 3: Rising from This Abyss }
+
+\subsection{Restatement of the Problem}
+
+Power system failures during extreme heat events can have devastating consequences, particularly for vulnerable populations. Without access to cooling, individuals may suffer from heat exhaustion, dehydration, and heat stroke, which can be fatal. Certain populations—such as the elderly, young children, low-income households, and those without personal vehicles—are disproportionately affected.\\
+Our task is to develop a vulnerability score for different neighborhoods in Memphis, Tennessee, to guide city officials in prioritizing resources and interventions. This score will be based on socioeconomic, demographic, and infrastructural factors, ensuring that assistance is distributed equitably and efficiently.
+
+\subsection{Assumptions and Justifications}
+
+\subsubsection{Vulnerability to heat waves is influenced by demographic, economic, and infrastructural factors.}
+Justification: Heat exposure disproportionately affects certain groups. The elderly and young children have a reduced ability to regulate body temperature, while low-income households may struggle to afford air conditioning. Additionally, neighborhoods with limited green spaces experience a greater urban heat island effect, exacerbating the dangers of extreme heat.\cite{https://journals.ametsoc.org/view/journals/wcas/6/2/wcas-d-13-00037_1.pdf}
+  
+\subsubsection{City officials have the capacity to use the vulnerability score to allocate cooling centers and emergency services.}
+Justification: Local governments can implement strategies such as deploying mobile cooling stations, adjusting power grid priorities, and expanding access to public cooling centers. This assumption ensures that the vulnerability score translates into actionable policy recommendations.
+  
+\subsubsection{The vulnerability score is based on measurable, publicly available data.}
+Justification: Using objective data ensures transparency and repeatability. Factors such as median income, vehicle ownership, household composition, housing type, and green space availability are quantifiable and relevant to heat vulnerability.
+
+\subsection{The Model}
+\subsubsection{Parameters}\label{params}
+%%example table
+%%example table
+\begin{table}[H]
+\centering
+\begin{tabular}{|p{2cm}|p{8cm}|p{6cm}|}
+\hline
+\bf Symbol & \bf Definition & \bf Units\\ \hline
+$I$ & Mean Household Income & Dollars  \\ \hline
+$A_{65}$ & Percent of Households with 65+ Members & \% \\ \hline\
+$A_{<18}$ & Percent of Households with Children & \%  \\ \hline
+$V$ & Percent of Households Without Vehicles & \% \\ \hline
+$H_a$ & Percent of Apartments & \%  \\ \hline
+$H_t$ & Percent of Townhouses & \% \\ \hline
+$H_{dh}$ & Percent of Detached Whole Houses & \%  \\ \hline
+$H_{mh}$ & Percent of Mobile Homes/Other Types & \% \\ \hline
+$G$ & Percent of Greenspace & \%  \\ \hline
+\end{tabular}
+\caption{Parameters for heat wave vulnerability}
+\end{table}
+
+\subsubsection{Developing the Model}
+\par
+The vulnerability score is based on six key factors that significantly impact a neighborhood’s ability to withstand extreme heat without power. We considered sixth variables that have been correlated with higher risk in heat waves. \\
+\begin{enumerate}
+    \item{\textit{Median Household Income} \\Justification: Lower-income households may struggle to afford air conditioning or high electricity bills, increasing their dependence on external cooling resources. In the event of a power outage, they may also lack the financial flexibility to relocate to hotels or purchase alternative cooling solutions such as battery-powered fans.}\cite{https://www.kff.org/racial-equity-and-health-policy/issue-brief/disparities-in-access-to-air-conditioning-and-implications-for-heat-related-health-risks/}
+    \item{\textit{Percent of Households with the Elderly.}\\ Justification: Elderly individuals are particularly vulnerable to extreme heat due to physiological factors that reduce their ability to regulate body temperature. Many also have underlying health conditions that increase the risk of heat-related illnesses. Additionally, elderly individuals are more likely to live alone and may have difficulty accessing emergency resources.\cite{https://pmc.ncbi.nlm.nih.gov/articles/PMC2900329/}
+    \item{\textit{Percent of Households with Young Children.} \\Justification: Young children, especially infants and toddlers, are highly susceptible to heat-related illnesses because their bodies are less efficient at regulating temperature. Families with children may also face logistical challenges in reaching cooling centers or obtaining emergency supplies during a power outage.\cite{https://www.epa.gov/children/protecting-childrens-health-during-and-after-natural-disasters-extreme-heat}
+    \item{\textit{Percentage of Households Without Vehicles} \\Justification: In a power outage, residents without personal transportation may struggle to reach cooling centers, medical facilities, or areas with restored power. Neighborhoods with high proportions of vehicle-less households require more localized cooling solutions to ensure residents are not stranded in dangerously hot conditions.}\cite{https://nyaspubs.onlinelibrary.wiley.com/doi/full/10.1111/nyas.15115}
+    \item{\textit{Housing Type and Density (Percentage of Apartments vs. Detached Homes.}\\ Justification: Housing structure plays a significant role in heat retention. Apartment buildings, particularly those with poor insulation or limited airflow, can become heat traps during extended power outages. In contrast, detached houses with access to yards and natural ventilation provide better cooling options. Neighborhoods with high concentrations of multi-unit housing are at greater risk during heat waves.\cite{https://americas.uli.org/wp-content/uploads/ULI-Documents/Scorched_Final-PDF.pdf}
+    \item{\textit{Availability of Green Spaces.} \\Justification: Green spaces, such as parks and tree-lined streets, help mitigate the urban heat island effect, which causes some neighborhoods to be significantly hotter than others. Areas with limited vegetation retain more heat, making power outages even more dangerous. Increased concrete and asphalt surfaces lead to higher temperatures, exacerbating the effects of extreme heat.\cite{https://www.epa.gov/green-infrastructure/reduce-heat-islands}
+}
+\end{enumerate} 
+Each of these factors contribute to a neighborhood’s overall vulnerability score, which is calculated using a weighted model to determine which areas are at the highest risk during a power outage.\\
+
+\subsubsection{Model Execution}
+Using the given data set, we created individual scores for the six factors we considered.  
+
+\begin{center}
+$I_s = 1 - (I_{i}/I)$
+\end{center}
+where $I_{i}$ is the median household income of that specific neighborhood and I is the mean household income of Memphis.
+
+\begin{center}
+$A_s = (1 - (A_{i65}/A_{65}))+(1-(A_{i,<18}/A_{<18})) = 2 - (A_{i65}/A_{65}+A_{i,<18}/A_{<18})$
+\end{center}
+where $A_{i65}$ is the percent of households in that neighborhood that have members older than 65 and $A_{i,<18}$ is the percent of households in that neighborhood that have members younger than 18.
+
+\begin{center}
+$H_s = 1 - (0.4(H_{mhi}/H_{mh})+0.3(H_{ai}/H_{a})+0.2(H_{ti}/H_{t})+0.1(H_{dhi}/H_{dh}))$
+\end{center}
+where $H_{mhi}$ is the percent of mobile/other houses, $H_{ai}$ is the percent of apartments, $H_{ti}$ is the percent of townhouses, and $H_{mdi}$ is the percent of detached whole houses in that neighborhood. These different forms of housing are weighted based on the relative difficulty of cooling down without air conditioning: mobile homes (0.4) are the most vulnerable because they heat up quickly and often lack proper insulation\cite{https://www.urban.org/urban-wire/mobile-homes-are-vulnerable-climate-extremes-heres-what-policymakers-can-do-next}, apartments (0.3) are also vulnerable, especially if they are in high-rise buildings with poor ventilation, townhouses (0.2) fall in the middle, detached homes (0.1) are the least vulnerable since they usually have better airflow and insulation.
+
+\begin{center}
+$G_s = 1 - (G_{i}/G)$
+\end{center}
+where $G_{i}$ is the percent of green space of that specific neighborhood and G is the average green space of Memphis.\\
+
+These calculations resulted in the following table: 
+\begin{figure}[H]
+\centering
+\includegraphics[scale=0.5]{Q3IndividualScores.png}
+\caption{Categorical Scores for Each Memphis Neighborhood}
+\end{figure}
+
+Using the resulting scores, we developed the vulnerability score for each neighborhood.
+\begin{center}
+$V_s = 0.3G_s+0.25A_s+0.2I_s+0.15H_s+0.1V_s$
+\end{center}
+
+This equation guides the selection of the most vulnerable neighborhoods by evaluating the most important factors in a heat wave.
+
+\subsubsection{Results}
+\begin{figure}[H]
+\centering
+\includegraphics[scale=0.5]{Screenshot from 2025-03-03 21-41-18.png}
+\caption{Vulnerability Score Table by Memphis Zip Code}
+\end{figure}
+\begin{figure}[H]
+\centering
+\includegraphics[scale=0.5]{Screenshot 2025-03-03 211358.png}
+\caption{Vulnerability Score Map by Memphis Zip Codes}
+\end{figure}
+
+\par 
+Using the vulnerability equation, the resulting vulnerability scores were mapped to their respective zip code tabulation areas. Areas with a positive score were deemed "in need" and mapped in varying shades of red (the darker the reds in more need). Areas with a negative score were deemed "safe" and mapped in varying shades of blue (the darker the blues are safer). By analyzing income, age, access to vehicles, types of housing and density, and access to green spaces. Mapping the scores provides a clear and accessible representation of heat exposure disparities. These scores and the resulting map serves as valuable tools for policymakers and urban planners to implement targeted heat mitigation strategies, ensuring that resources are directed toward the most vulnerable populations and improving overall community resilience to extreme heat events.
+
+
+
+
+
+
+
+
+
+
+
+\subsection{Evaluating the Model}
+\subsubsection{Proposed Solution}
+\par Cooling pods provide vital relief to vulnerable populations during extreme heat, including the elderly, young children, low-income individuals, those without access to a car, and residents in urban heat islands. The elderly and young children are particularly susceptible to heat-related illnesses because their bodies are less able to regulate temperature. Cooling pods offer a safe, air-conditioned space for these groups to cool down. By placing pods in high-density areas, such as near senior centers and schools, the city ensures these vulnerable groups have easy access to relief.
+
+Low-income residents often lack air conditioning or reliable cooling systems, making them more vulnerable during heatwaves. Cooling pods offer a free, accessible alternative, providing cooling in neighborhoods with high poverty levels. The mobility of the pods ensures they can be relocated based on real-time demand, ensuring that even those without air conditioning at home can find relief.
+
+For individuals without a car, traveling to a traditional cooling center can be a significant challenge. Cooling pods are placed in high-traffic areas like bus stops, transit hubs, and local neighborhoods, reducing transportation barriers and making it easier for people to access relief. Since the pods can be moved to different locations as needed, they ensure that vulnerable populations have consistent access to cooling throughout the heatwave.
+
+Urban heat islands, areas with dense concrete and limited green space, often experience much higher temperatures than surrounding areas, affecting low-income residents and communities of color. By positioning pods in these high-temperature zones, the city can provide localized relief where it’s needed most.
+
+In summary, cooling pods are a flexible and scalable solution that ensures vulnerable groups, such as the elderly, children, low-income individuals, and those in heat islands, have accessible cooling during heatwaves. By overcoming barriers like lack of air conditioning, transportation challenges, and living in heat-prone areas, cooling pods provide equitable access to relief, ensuring that those who need it most receive support during extreme heat events.\cite{https://vitalsigns.edf.org/story/americas-climate-crisis-and-housing-crisis-are-converging-hurt-most-vulnerable}
+
+\subsubsection{Strengths and Weaknesses}
+
+\par Our model’s ability to assign weighted vulnerability scores gives city officials a clear framework for prioritizing interventions. This approach ensures that the most at-risk communities, such as those with high elderly populations or limited transportation access, receive immediate assistance during a power outage. Additionally, the model’s reliance on publicly available data makes it transparent and reproducible, enabling updates as new information becomes available. Another key strength of the model lies in its adaptability. The vulnerability score can be recalibrated by adjusting weighting factors or incorporating additional data sources, such as real-time temperature fluctuations or health records of heat-related illnesses. This flexibility ensures that the model remains relevant across different cities and evolving climate conditions.
+
+However, our model also has limitations. While the model captures key structural and environmental risk factors, it does not directly incorporate real-time climate conditions or community resilience efforts. Some neighborhoods may have strong social networks that help mitigate the effects of extreme heat, while others may lack local support systems. The model does not account for these differences, which could affect the accuracy of its predictions. Another potential weakness is that the weighting system used to combine different vulnerability factors is based on reasonable assumptions rather than empirical causation. While the assigned weights reflect logical priorities, further statistical validation—such as regression analysis using heat-related hospitalization data—could enhance the model’s precision.
+
+Despite these challenges, the vulnerability score model remains a powerful tool for city officials seeking to minimize the impact of heat waves during power outages. By providing a structured, quantitative approach to risk assessment, the model ensures that emergency cooling strategies are strategically targeted to the communities that need them most. 
+
+\section{Conclusion}
+
+\subsection{Part 1: Indoor Temperature Prediction During Heat Waves}
+Our analysis of indoor temperatures in non-air-conditioned housing units during heat waves established serious health risks for Memphis residents. The multi-linear regression model predicted that with extended exposure, it is likely indoor temperatures will exceed 90°F during extreme heat events, especially in homes that are poorly shaded or ventilated. Though proficiently modeling short-term heat accumulation dynamics using outdoor temperature, humidity, and time-of-day variables, the model's reliance on seasonal data limits its ability to capture long-term climate trends. However, these findings stress the need for targeted interventions, such as subsidized cooling solutions or emergency cooling centers, in neighborhoods with high concentrations of vulnerable housing. 
+
+\subsection{Part 2: Long-Term Peak Power Demand Forecasting}
+The SARIMAX projection forecasted a steady bout of rise in the summer-peek power demand in Memphis at approximately 16\% from 2025 to 2040. Driven by demographic shifts along with economic expansion, this upsurge denotes an urgent necessity for investment in infrastructure that could mitigate any failures on the grid during heat waves. Although the 2.43\% MAPE value was an indication of good past forecasting performance, widening confidence intervals after 2035 established a need for planning flexibility. City leaders should focus on grid modernization, transitions to renewable energy, and demand-reducing incentives to counterbalance the risks posed by increasing temperatures and population growth. 
+\subsection{Part 3: Neighborhood Vulnerability Prioritization}
+The vulnerability scoring model synthesized socioeconomic variables, demographics, and infrastructure. A total of five zip codes, which include 38103, 38104, 38105, 38106, and 38141, were identified as high risk. Besides low income, elderly population, and dense housing, these areas experience compounded heat risks. Relative weighting of the model allows for dynamic prioritization; however, this could possibly be enhanced with real-time health data further down the road. Our recommendation for mobile cooling pods meets deep inequalities in transportation access and cooling infrastructure--an approach that can be scaled and mobilized in anticipation of heat-related crises during warning windows. 
+
+\subsection{Synthesis and Path Forward}
+Together, these modeling tools provide the local Memphis officials with a framework for robust heat resilience planning. The predictions of indoor temperature quantify immediate risks while forecasting demand, and vulnerability scores help in accurate resource allocation. Actions to be carried out based on these recommendations include access expansion, electricity grid hardening, and targeting neighborhoods with high-risk status to be coordinated among public health, urban planning, and energy sectors. With such a data-driven approach, Memphis could minimize heat-related morbidity, ensure equitable access to cooling resources, and offer climate resilience to its most vulnerable populations. 
+
+
+
+
+%--------------------------REFERENCES-----------------------------
+\newpage
+\begin{thebibliography}{56}
+\bibitem{https://pmc.ncbi.nlm.nih.gov/articles/PMC4352572/}\url{https://pmc.ncbi.nlm.nih.gov/articles/PMC4352572/}
+\bibitem{https://pmc.ncbi.nlm.nih.gov/articles/PMC4121079/}\url{https://pmc.ncbi.nlm.nih.gov/articles/PMC4121079/}
+\bibitem{https://www.sciencedirect.com/science/article/pii/S0378778819312169}\url{https://www.sciencedirect.com/science/article/pii/S0378778819312169}
+\bibitem{https://www.engineeringtoolbox.com/heat-transfer-d_430.html}\url{https://www.engineeringtoolbox.com/heat-transfer-d_430.html}
+\bibitem{https://www.energy.gov}\url{https://www.energy.gov}
+\bibitem{https://www.epa.gov/sunsafety/uv-index}\url{https://www.epa.gov/sunsafety/uv-index}
+\bibitem{https://pmc.ncbi.nlm.nih.gov/articles/PMC4456148/}\url{https://pmc.ncbi.nlm.nih.gov/articles/PMC4456148/}
+\bibitem{https://sealed.com/resources/how-long-does-insulation-last/}\url{https://sealed.com/resources/how-long-does-insulation-last/}
+\bibitem{https://www.lbl.gov}\url{https://www.lbl.gov}
+\bibitem{https://www.engineeringtoolbox.com/conduction-heat-transfer-d_430.html}\url{https://www.engineeringtoolbox.com/conduction-heat-transfer-d_430.html}
+\bibitem{https://www.uvindextoday.com/usa/tennessee/shelby-county/memphis-uv-index}\url{https://www.uvindextoday.com/usa/tennessee/shelby-county/memphis-uv-index}
+\bibitem{https://www.mdpi.com/2071-1050/11/15/4092}\url{https://www.mdpi.com/2071-1050/11/15/4092}
+\bibitem{https://www.journals.sagepub.com/doi/pdf/10.1177/0143624419847621}\url{https://www.journals.sagepub.com/doi/pdf/10.1177/0143624419847621}
+
+
+
+\bibitem{https://journals.ametsoc.org/view/journals/wcas/6/2/wcas-d-13-00037_1.pdf}\url{https://journals.ametsoc.org/view/journals/wcas/6/2/wcas-d-13-00037_1.pdf
+}
+\bibitem{https://www.kff.org/racial-equity-and-health-policy/issue-brief/disparities-in-access-to-air-conditioning-and-implications-for-heat-related-health-risks/}\url{https://www.kff.org/racial-equity-and-health-policy/issue-brief/disparities-in-access-to-air-conditioning-and-implications-for-heat-related-health-risks/}
+\bibitem{https://pmc.ncbi.nlm.nih.gov/articles/PMC2900329/}\url{https://pmc.ncbi.nlm.nih.gov/articles/PMC2900329/}
+\bibitem{https://www.epa.gov/children/protecting-childrens-health-during-and-after-natural-disasters-extreme-heat}\url{https://www.epa.gov/children/protecting-childrens-health-during-and-after-natural-disasters-extreme-heat}
+\bibitem{https://nyaspubs.onlinelibrary.wiley.com/doi/full/10.1111/nyas.15115}\url{https://nyaspubs.onlinelibrary.wiley.com/doi/full/10.1111/nyas.15115}
+\bibitem{https://americas.uli.org/wp-content/uploads/ULI-Documents/Scorched_Final-PDF.pdf}\url{https://americas.uli.org/wp-content/uploads/ULI-Documents/Scorched_Final-PDF.pdf}
+\bibitem{https://www.epa.gov/green-infrastructure/reduce-heat-islands}\url{https://www.epa.gov/green-infrastructure/reduce-heat-islands}
+\bibitem{https://www.urban.org/urban-wire/mobile-homes-are-vulnerable-climate-extremes-heres-what-policymakers-can-do-next}\url{https://www.urban.org/urban-wire/mobile-homes-are-vulnerable-climate-extremes-heres-what-policymakers-can-do-next}
+\bibitem{https://vitalsigns.edf.org/story/americas-climate-crisis-and-housing-crisis-are-converging-hurt-most-vulnerable}\url{https://vitalsigns.edf.org/story/americas-climate-crisis-and-housing-crisis-are-converging-hurt-most-vulnerable}
+\bibitem{HyndmanFan} Hyndman, R. J., \& Fan, S. (2009). Density forecasting for long-term peak electricity demand. *Journal of Forecasting*, 28(3), 201-216. \href{https://doi.org/10.1002/for.1095}{DOI: 10.1002/for.1095}
+
+\bibitem{Cohen2010} Cohen, J. E. (2010). *Population growth and economic development*. Springer. \href{https://link.springer.com/book/10.1007/978-1-4419-5773-4}{Springer Link}
+
+\bibitem{Box1976} Box, G. E. P., \& Jenkins, G. M. (1976). *Time Series Analysis: Forecasting and Control*. Holden-Day. \href{https://www.amazon.com/Time-Series-Analysis-Forecasting-Control/dp/081623711X}{Amazon}
+
+\bibitem{Wang2019} Wang, Z. (2019). *Economic and demographic factors in electricity demand forecasting*. *Energy Economics*, 76, 78-85. \href{https://doi.org/10.1016/j.eneco.2018.12.008}{DOI: 10.1016/j.eneco.2018.12.008}
+
+\bibitem{Hyndman2008} Hyndman, R. J. (2008). *Forecasting: Principles and Practice*. OTexts. \href{https://otexts.com/fpp3/}{Website Link}
+
+\end{thebibliography}
+
+\newpage
+\section{Appendix}
+\par
+The code takes in a CSV file with the predicted HPI/CCI ratio and the permits issued. This code is used to train a multilinear regression model that outputs a predicted housing supply. The code was reformatted and commented using ChatGPT.
+
+\begin{center}
+\includegraphics[scale=0.7]{q1-model.png}
+\par Code for Model to Calculate Indoor Temperature
+\end{center}
+\begin{center}
+\includegraphics[scale=0.75]{sensitivity_analysis.png}
+\par Sensitivity Analysis Code for Indoor Temperature Model
+\end{center}
+
+
+\begin{center}
+\includegraphics[scale=0.5]{Screenshot 2025-03-03 at 9.38.36 PM.png}
+\par Correlation Matrix Code
+\end{center}
+
+\begin{center}
+\includegraphics[scale=0.5]{Screenshot 2025-03-03 at 9.38.36 PM.png}
+\par Correlation Matrix Code
+\end{center}
+
+\begin{center}
+\includegraphics[scale=0.5]{Screenshot 2025-03-03 at 9.39.15 PM.png}
+\par SARIMAX Model Code
+\end{center}
+
+
+
+
+\end{document}
